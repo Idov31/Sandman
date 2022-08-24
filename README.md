@@ -36,7 +36,7 @@ To start, you can compile the SandmanBackdoor as [mentioned below](#setup), beca
 
 - Can work on hardened networks since NTP is usually allowed in FW.
 
-- Impsersonating a legitiment NTP server via IP spoofing. **TBA**
+- Impsersonating a legitiment NTP server via IP spoofing.
 
 ## Setup
 
