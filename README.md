@@ -4,7 +4,7 @@
 
 Sandman is a backdoor that meant to work on hardened networks during red team engagements.
 
-Sandman works as a stager and leverages NTP (protocol to sync time & date) to get and run an arbitrary shellcode from a pre defined server.
+Sandman works as a stager and leverages NTP (protocol to sync time & date) to get and run an arbitrary **shellcode** from a pre defined server.
 
 Since NTP is a protocol that is overlooked by many defenders resulting wide network accessability.
 
@@ -24,11 +24,13 @@ python3 sandman_server.py "Network Adapter" "Payload Url" "optional: ip to spoof
 
 - Payload Url: The URL to your shellcode, it could be your agent (for example, CobaltStrike or meterpreter) or another stager.
 
-- IP to Spoof: If you want to spoof a legitiment IP address (for example, time.microsoft.com's ip address). **TBA**
+- IP to Spoof: If you want to spoof a legitiment IP address (for example, time.microsoft.com's ip address).
 
 ### SandmanBackdoor (Usage)
 
 To start, you can compile the SandmanBackdoor as [mentioned below](#setup), because it is a single lightweight C# executable you can execute it via ExecuteAssembly, run it as a NTP provider **TBA** or just execute / inject it.
+
+**NOTE: Make sure you are compiling with the x64 option and not the any cpu option!**
 
 ## Capabilities
 
