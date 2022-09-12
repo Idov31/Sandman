@@ -63,6 +63,6 @@ To compile the backdoor itself I used Visual Studio 2022, but as mentioned in th
 
 - [Orca](https://github.com/ORCx41/)
 
-- Special thanks to [Tim McGuffin](https://twitter.com/NotMedic) for the time provider idea.
+- Special thanks to [Tim McGuffin](https://twitter.com/NotMedic) for the time [provider idea](https://twitter.com/NotMedic/status/1561354598744473601).
 
 Thanks to who already contributed and I'll happily accept contribution, make a pull request and I will review it!
