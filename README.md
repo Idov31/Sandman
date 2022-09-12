@@ -28,7 +28,7 @@ python3 sandman_server.py "Network Adapter" "Payload Url" "optional: ip to spoof
 
 ### SandmanBackdoor (Usage)
 
-To start, you can compile the SandmanBackdoor as [mentioned below](#setup), because it is a single lightweight C# executable you can execute it via ExecuteAssembly, run it as a NTP provider **TBA** or just execute / inject it.
+To start, you can compile the SandmanBackdoor as [mentioned below](#setup), because it is a single lightweight C# executable you can execute it via ExecuteAssembly, run it as a NTP provider or just execute / inject it.
 
 **NOTE: Make sure you are compiling with the x64 option and not the any cpu option!**
 
@@ -57,8 +57,12 @@ To compile the backdoor itself I used Visual Studio 2022, but as mentioned in th
 
 - Suspicious NTP communication, starts with known magic header.
 
+- YARA rule.
+
 ## Contributes
 
 - [Orca](https://github.com/ORCx41/)
+
+- Special thanks to [Tim McGuffin](https://twitter.com/NotMedic) for the time provider idea.
 
 Thanks to who already contributed and I'll happily accept contribution, make a pull request and I will review it!
